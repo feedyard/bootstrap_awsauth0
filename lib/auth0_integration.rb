@@ -8,8 +8,8 @@ require 'aws-sdk'
 require 'open-uri'
 
 def load_secrets
-  fail(IOError, 'secrets file missing') unless File.file?('./secrets.yml')
-  YAML.load_file('./secrets.yml')
+  fail(IOError, 'secrets file missing') unless File.file?('./.secrets.yml')
+  YAML.load_file('./.secrets.yml')
 end
 
 def request_auth0_token(secrets)
@@ -72,15 +72,16 @@ def create_client(auth0api, secrets)
     response =  Net::HTTP.get_response(uri)
     client_metadata =  response.body
 
-    Aws.config.update({
-                          region: 'us-east-1',
-                          credentials: Aws::Credentials.new('', "")
-                      })
+    Aws.config.update(
+      region: 'us-east-1',
+      credentials: Aws::Credentials.new(value['aws_access_key_id'], value['aws_secret_access_key'])
+    )
     iam = Aws::IAM::Client.new
-    idp = iam.create_saml_provider({
-                                       saml_metadata_document: client_metadata,
-                                       name: "auth0"
-                                   }).saml_provider_arn
+    idp = iam.create_saml_provider(
+      saml_metadata_document: client_metadata,
+      name: 'auth0'
+    ).saml_provider_arn
+
   end
 
   save_access_template(secrets)
